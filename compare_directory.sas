@@ -158,7 +158,7 @@
 /*** Clean Up ***/
 	%if &debug. = 0 %then %do;
 	    proc datasets library=work nolist;
-	        delete diff_: add uniquevars 
+	        delete diff_: add uniquevars sorted_ds1 sorted_ds2
 			;
 	    run;
 	    quit;

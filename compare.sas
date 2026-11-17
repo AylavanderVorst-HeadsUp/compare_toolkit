@@ -29,6 +29,10 @@
 	debug = 0					/* Set to any other number than 0 to debug  			*/
 ) ;
 
+	/*** Input parameter checks ***/
+	%let idvars = %cmpres(&idvars.);
+	/*** End Input parameter checks ***/
+
 
 	/*** Obs unique to each dataset ***/
 	%if &obsUniqueToOneDS. %then %do;

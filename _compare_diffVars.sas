@@ -16,6 +16,13 @@
 	%local compareVars_num compareVars_char compareVars charDiffVars numDiffVars i j diffVar idvar ds1_n ds2_n;
 	%global n_diffVars diffVars;
 
+	proc datasets library=work nolist;
+        delete _diffVars: _vars _numdiff: _chardiff: _proccompare_diff
+			   sorted_ds1 sorted_ds2
+			   diff_: diff
+		;
+    run;
+
 	/*** Input parameter checks ***/
 
     /* Check if datasets exist */
@@ -148,17 +155,24 @@
         %end;
 		var &compareVars_num.;
 	run;
+	proc sql noprint;
+		select count(*) into :n_numdiffVars
+		from _numdiff_pre
+		;
+	quit;
 	data _numdiff;
 		length Var $200;
 		set _numdiff_pre;
-		array col COL: ;
-		do over col;
-			/* If at least one value is not equal for the var (row) then output it */
-			if col ^= .E then do;
-				output;
-				leave;
+		%if &n_numdiffVars. > 0 %then %do;
+			array col COL: ;
+			do over col;
+				/* If at least one value is not equal for the var (row) then output it */
+				if col ^= .E then do;
+					output;
+					leave;
+				end;
 			end;
-		end;
+		%end;
 	run;
 
 	/*char vars*/
@@ -170,17 +184,24 @@
         %end;
 		var &compareVars_char.;
 	run;
+	proc sql noprint;
+		select count(*) into :n_chardiffVars
+		from _chardiff_pre
+		;
+	quit;
 	data _chardiff;
 		length Var $200;
 		set _chardiff_pre;
-		array col COL: ;
-		do over col;
-			/* If at least one value (column) is not equal for the var (row) then output it */
-			if find(strip(col), "X") > 0 then do;
-				output;
-				leave;
+		%if &n_chardiffVars. > 0 %then %do;
+			array col COL: ;
+			do over col;
+				/* If at least one value (column) is not equal for the var (row) then output it */
+				if find(strip(col), "X") > 0 then do;
+					output;
+					leave;
+				end;
 			end;
-		end;
+		%end;
 	run;
 
 	/*all*/
@@ -276,6 +297,7 @@
 	%if &debug. = 0 %then %do;
 	    proc datasets library=work nolist;
 	        delete _diffVars: _vars _numdiff: _chardiff: _proccompare_diff
+				   sorted_ds1 sorted_ds2
 				   %if &merge. ^= 0 %then %do; diff_: %end;
 			;
 	    run;
@@ -292,7 +314,7 @@
 	    /* Clean up if no differences */
 		%if &debug. = 0 %then %do;
 		    proc datasets library=work nolist;
-		        delete _vars _proccompare_diff
+		        delete _vars _proccompare_diff sorted_ds1 sorted_ds2
 				;
 		    run;
 		    quit;
